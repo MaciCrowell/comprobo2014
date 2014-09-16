@@ -14,6 +14,6 @@ iwconfig wlan0 mode ad-hoc
 iwconfig wlan0 channel 1
 iwconfig wlan0 key aaaaa11111
 iwconfig wlan0 essid RPi
-ifconfig wlan0 192.168.17.$IPSUFFIX netmask 255.255.255.0 broadcast 192.168.17.255 up
+ifconfig wlan0 192.168.17.$IPSUFFIX netmask 255.255.255.0 up
 
 ping $1
