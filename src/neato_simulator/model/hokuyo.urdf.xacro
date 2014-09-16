@@ -54,11 +54,11 @@
 	</noise>
 	</ray>
 	<always_on>1</always_on>
-	<update_rate>10</update_rate>
+	<update_rate>5</update_rate>
 	<plugin name="LIDAR_en_ros" filename="libgazebo_ros_laser.so">
 	  <topicName>/scan</topicName>
 	  <frameName>laser_joint</frameName>
-	  <updateRate>10.0</updateRate>
+	  <updateRate>5.0</updateRate>
         </plugin>
    </sensor>
   </gazebo>
