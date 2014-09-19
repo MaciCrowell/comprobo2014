@@ -44,9 +44,10 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 
 lastKey = 'hi'
-scan = [-1] * 360
+scan = [-1] * 360 
 targetDist = .75
 hasWall = False
+avoidTemp = False
 
 moveBindings = {
 		'w':(1,0),
@@ -71,16 +72,30 @@ def keyboardCommand():
                 print 'keyboardControl'
             currentTask = 'keyboardControl'
             keyboardControl(pub, tempLastKey)
-
         elif (tempLastKey == 'f'):
             if currentTask != 'wallFollow':
                 print 'wallFollow'
             currentTask = 'wallFollow'
             wallFollow(pub)
+
+        elif (tempLastKey == 'p'):
+            if currentTask != 'personFollow':
+                print 'personFollow'
+            currentTask = 'personFollow'
+            personFollow(pub)
+
+        elif (tempLastKey == 'o'):
+            global avoidTemp
+            avoidTemp = False
+            if currentTask != 'objectAvoid':
+                print 'objectAvoid'
+            currentTask = 'objectAvoid'
+            objectAvoid(pub)
             
     	elif (tempLastKey == '\x03'):
             stopRobot()
             break
+
         else:
             if currentTask != 'stop':
                     print 'stop'
@@ -88,19 +103,59 @@ def keyboardCommand():
             sendCommand(pub,0,0)
         r.sleep()
 
+def personFollow(pub):
+    tempScan = scan
+    return
+
+def objectAvoid(pub):
+    tempScan = scan
+    if avoidTemp:
+        if not checkForObstacle(tempScan, 0) and avoidTemp:
+            global lastKey
+            global avoidTemp
+            avoidTemp = False
+            lastKey = 'f'
+            sendCommand(pub,0,0)
+    angle = 0
+    if not checkForObstacle(tempScan, angle):
+        print "No obstacle"
+        sendCommand(pub, 1,0)
+    else:
+        print "obstacle detected"
+        for i in range(0,181,2):
+            for j in [-1,1]:
+                angle = ((j * i) +360)%360
+                print angle
+                if not checkForObstacle(tempScan, angle):
+                    print "turn: " + str(j)
+                    sendCommand(pub, 0,.4*j)
+                    return
+        sendCommand(pub, 0,0)
+
+def checkForObstacle(tempScan, angle):
+    numPoints = 0
+    for i in range(360):
+        center = (i+angle + 360)%360
+        if tempScan[center] != -1:
+
+            y = tempScan[center] * math.cos(math.radians(i))
+            x = -1 * tempScan[center] * math.sin(math.radians(i))
+            if abs(x) < .2 and y>0 and y<1:
+                numPoints +=1
+    if numPoints >1:
+        return True
+    else:
+        return False
+    
+
 def wallFollow(pub):
     tempScan = scan
-    dist45 = averagePoint(65,tempScan)
-    dist135 = averagePoint(115,tempScan)
-
-    # if dist45 == -1:
-    #     dist45 = 7
-    # if dist135 == -1:
-    #     dist135 = 7
-
-    # normDist45 = dist45/(dist45 + dist135)
-    # normDist135 = dist135/(dist45 + dist135)
-    # turn = normDist135/normDist45 * 10
+    if checkForObstacle(tempScan, 0):
+        global lastKey
+        global avoidTemp
+        avoidTemp = True
+        lastKey = 'o'
+        sendCommand(pub,0,0)
 
     wall = findClosestWall(tempScan)
     if wall == 'na':
@@ -110,13 +165,6 @@ def wallFollow(pub):
 
     distFromWall = averagePoint(wall,tempScan)
 
-    # for i in range(45,135):
-    #     dist = averagePoint(i,tempScan)
-    #     if dist != -1:
-    #         distFromWall = dist
-
-    # print "dist45: " + str(dist45)
-    # print "dist135: " + str(dist135)
     print "angFromWall: "+ str(angFromWall)
     print "distFromWall: "+ str(distFromWall)
     angFromAng = -1*angFromWall/100.0
@@ -130,10 +178,6 @@ def wallFollow(pub):
         angFromDist2 = 0
     ang = angFromAng + angFromDist
     print "ang: " + str(ang)
-    # if ang>.4:
-    #     ang = .4
-    # elif ang< (-.4):
-    #     ang = (-.4)
     sendCommand(pub, .1, ang)
 
 def findClosestWall(tempScan):
@@ -184,7 +228,7 @@ def scan_received(msg):
         return
 
     for i in range(360):
-        if msg.ranges[i] > 0.1 and msg.ranges[i] < 7.0:
+        if msg.ranges[i] > 0.1 and msg.ranges[i] < 5.0:
             scan[i] = msg.ranges[i]
         else:
             scan[i] = -1
