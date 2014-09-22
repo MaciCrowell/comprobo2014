@@ -146,16 +146,22 @@ class xv11():
         # turn things on
         time.sleep(2)
         #print self.port.recv(16384)
-        time.sleep(5)
+        time.sleep(2)
         self.setTestMode("on")
         time.sleep(2)
         self.setLDS("on")
 
-	
-
     def exit(self):
         self.setLDS("off")
         self.setTestMode("off")
+
+    def send_command(self,cmd):
+        print cmd.data
+        if cmd.data == 'shutdown':
+            self.exit()
+            self.port.send("shutdown\r\n")
+        else:
+            self.port.send(cmd.data + "\r\n")
 
     def setTestMode(self, value):
         """ Turn test mode on/off. """
@@ -177,10 +183,21 @@ class xv11():
         #return (ranges,intensities)
         if len(ranges) == 0:
             return (ranges,intensities)
+        # filter out lone detections
         for i in range(len(ranges)):
             previous = (i-1)%len(ranges)
             next = (i+1)%len(ranges)
             if (ranges[previous] == 0 and ranges[next] == 0) or intensities[i] < 10:
+                ranges[i] = 0.0
+                intensities[i] = 0.0
+        # filter out ranges that are too long or too short
+        for i in range(len(ranges)):
+            if ranges[i] > 5.0:
+                pass
+	       	    # assume no detection is free space
+                #ranges[i] = 2.0
+                #intensities[i] = 50
+            if ranges[i] < .2 or ranges[i] > 5.0:
                 ranges[i] = 0.0
                 intensities[i] = 0.0
         return (ranges,intensities)
@@ -193,7 +210,6 @@ class xv11():
         try:
             remainder = ""
             found_start_token = False
-            print "looking for starting token"
             while not(found_start_token):
                 line = self.port.recv(1024)
                 if line.find('Unknown Cmd') != -1:
@@ -212,7 +228,6 @@ class xv11():
                         listing = listing[i+1:]
                         found_start_token = True
                         break
-            print "found starting token"
             if len(listing) and not(line.endswith('\n')):
                 remainder = listing[-1]
                 listing = listing[0:-1]

@@ -4,9 +4,7 @@
   <include file="$(find neato_node)/launch/bringup_minimal.launch">
 	<arg name="host" value="$(arg host)"/>
   </include>
-<!-- todo specify IP to gscam --> 
   <include file="$(find gscam)/examples/raspi_nodelet.launch">
 	<arg name="host" value="$(arg host)"/>
   </include>
-
 </launch>
