@@ -162,7 +162,8 @@ class ParticleFilter:
 		# TODO: fill in the appropriate service call here.  The resultant map should be assigned be passed
 		#		into the init method for OccupancyField
 
-		self.occupancy_field = OccupancyField(map)
+		# for now we have commented out the occupancy field initialization until you can successfully fetch the map
+		#self.occupancy_field = OccupancyField(map)
 		self.initialized = True
 
 	def update_robot_pose(self):
@@ -171,10 +172,12 @@ class ParticleFilter:
 				(1): compute the mean pose (level 2)
 				(2): compute the most likely pose (i.e. the mode of the distribution) (level 1)
 		"""
-		# TODO: assign the lastest pose into self.robot_pose as a geometry_msgs.Pose object
-
 		# first make sure that the particle weights are normalized
 		self.normalize_particles()
+
+		# TODO: assign the lastest pose into self.robot_pose as a geometry_msgs.Pose object
+		# just to get started we will fix the robot's pose to always be at the origin
+		self.robot_pose = Pose()
 
 	def update_particles_with_odom(self, msg):
 		""" Implement a simple version of this (Level 1) or a more complex one (Level 2) """
@@ -313,8 +316,8 @@ class ParticleFilter:
 			# we have moved far enough to do an update!
 			self.update_particles_with_odom(msg)	# update based on odometry
 			self.update_particles_with_laser(msg)	# update based on laser scan
-			self.resample_particles()				# resample particles to focus on areas of high density
 			self.update_robot_pose()				# update robot's pose
+			self.resample_particles()				# resample particles to focus on areas of high density
 			self.fix_map_to_odom_transform(msg)		# update map to odom transform now that we have new particles
 		# publish particles (so things like rviz can see them)
 		self.publish_particles(msg)
